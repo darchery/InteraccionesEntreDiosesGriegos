@@ -28,7 +28,7 @@ El grafo elegido procede de una investigación propia (al final del documento se
 Aquí una representación gráfica del grafo:
 
 
-![](C:\Users\lucas\Documents\Scripts en R\PrácticaPageRank\InteraccionesDioses.jpg){width='520px' height='560px'}
+![](C:\Users\lucas\Documents\Scripts en R\PrácticaPageRank\RecursosEInformacion\InteraccionesDioses.jpg){width='520px' height='560px'}
 
 
 El uso de PageRank es bastante interesante en esta
