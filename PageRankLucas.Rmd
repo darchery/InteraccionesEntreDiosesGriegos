@@ -1,0 +1,324 @@
+---
+title: "PageRank: Interacciones entre Dioses de la mitología Griega"
+author: "Lucas Díaz Ruiz"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introducción al proyecto
+
+Para este trabajo he escogido el tema de la mitología griega, realizando una pequeña 
+recopilación de dioses, historias y mitos. 
+
+Esta mitología tiene aproximadamente 100 dioses pero si contamos a las ninfas,
+seres del bosque y otros espíritus la cifra total asciende a más de 3000 seres.
+
+No pueden saberse con exactitud la cantidad total de interacciones entre dioses, ya 
+que estas fueron recogidas por una religión que transmitía sus pasajes de manera oral 
+y no fueron puestas por escrito hasta épocas muy posteriores. 
+En mi caso he elegido las historias y aventuras más famosas que llamaron mi atención.
+
+El grafo elegido procede de una investigación propia (al final del documento se encuentran las interacciones detalladas individualmente) que consta de un total de
+67 interacciones entre todos los dioses (algunas son mutuas).
+Aquí una representación gráfica del grafo:
+
+
+![](C:\Users\lucas\Documents\Scripts en R\PrácticaPageRank\InteraccionesDioses.jpg){width='520px' height='560px'}
+
+
+El uso de PageRank es bastante interesante en esta
+investigación ya que incluso con interacciones 
+reducidas podemos obtener datos y porcentajes bastante
+curiosos y llamativos que no hubiésemos obtenido ni deducido de otra manera.
+
+La elección casi aleatoria de las historias de las deidades hace necesario el uso de este algoritmo para reflejar en estadísticas esta investigación.
+
+Ni imaginar cuanto de interesante seria un grafo real
+con todas las historias escritas y no escritas sobre
+las mas de 100 deidades y seres que conforman esta mitología.
+
+
+## Preparación del trabajo
+
+Primero necesitamos definir la matriz de interacciones `Matriz_Dioses` en la que se encuentra los
+datos necesarios sobre los eventos mitológicos que relacionan los 15 Dioses elegidos.
+
+Teniendo en cuenta que la coordenada `i` son las filas y la coordenada `j` son las columnas, la construcción de la matriz se basa en que las filas son las acciones pasivas que ocurren sobre ese dios, es decir, sobre Zeus actuan 4 diosas, Artemisa con una interacción, Deméter con otra, Hera con 4 y Atenea con 1. Y por el contrario las columnas son las acciones activas que realiza esa deidad. Por ejemplo Zeus interacctua 2 veces con Artemisa, 1 vez con Deméter, 4 veces con Hera y una vez con Perséfone, Atenea y Dioniso.
+
+```{r}
+Matriz_Dioses <- matrix(
+  c(
+    0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 4, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 2, 0,
+    0, 0, 1, 0, 6, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    0, 0, 0, 5, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 1,
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0, 0, 0,
+    2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ),
+  nrow = 15, # Número de filas
+  ncol = 15, # Número de columnas
+  byrow = TRUE, # Pasamos los valores por filas
+  dimnames = list(
+    c("Zeus", "Hades", "Poseidón", "Ares", "Afrodita", "Hermes", "Apolo", "Artemisa", "Deméter", 
+    "Hestia", "Hefesto", "Hera", "Perséfone", "Atenea", "Dioniso"),
+    c("Zeus", "Hades", "Poseidón", "Ares", "Afrodita", "Hermes", "Apolo", "Artemisa", "Deméter", 
+    "Hestia", "Hefesto", "Hera", "Perséfone", "Atenea", "Dioniso")
+  ) # Nombre de los elementos
+)  
+```
+
+
+Ahora necesitamos normalizar la matriz dividiendo cada elemento de la columna por la suma de
+sus elementos, para que la suma de cada columna sea 1. Convirtiendola en la matriz
+de transiciones. Esto es necesario para el correcto funcionamiento y aplicación 
+del algoritmo `PageRank`.
+
+
+```{r}
+Matriz_Dioses <- scale(Matriz_Dioses, 
+                      center = FALSE, 
+                      scale = colSums(Matriz_Dioses)) 
+
+```
+
+
+Ahora usaremos el método `powerMethod` de la libreria `matlib`. Pero antes tenemos
+que cargar la libreria.
+
+
+```{r}
+library(matlib)
+
+```
+
+
+
+Esta función realiza el método potencia, que calcula una sucesión de vectores partiendo 
+de uno inicial. Hasta que la diferencia entre dos vectores menor que un umbral definido. 
+Así verificamos que este método se detiene en algún momento.
+
+
+```{r}
+resultado_dioses <- powerMethod(Matriz_Dioses)
+
+```
+
+
+Ahora calculamos su autovalor determinado:  
+
+
+```{r}
+resultado_dioses$value
+```
+
+
+Y el autovector asociado a ese autovalor:  
+
+
+```{r}
+resultado_dioses$vector
+```
+
+
+Queremos un vector que la suma de sus componentes sumen 1, así que dividimos ese vector 
+entre la suma total del mismo:  
+
+
+```{r}
+resultado_dioses$vector / sum(resultado_dioses$vector)
+```
+
+
+Como podemos comprombar la suma de los vectores es 1: 
+
+
+```{r}
+sum(resultado_dioses$vector / sum(resultado_dioses$vector))
+```
+
+### Tabla ordenada con las deidades más importantes
+
+Aquí obtenemos los porcentajes finales ordenados con la función `sort`.
+
+```{r}
+  sort(resultado_dioses$vector / sum(resultado_dioses$vector), decreasing = TRUE)
+```
+
+Ahora creamos un vector con el resultado final (un vector con valores entre 0 y 1) y le asignamos los nombres de los elementos: 
+
+```{r}
+vector_resultado_dioses <- c(resultado_dioses$vector / sum(resultado_dioses$vector))
+names(vector_resultado_dioses) <- c("Zeus", "Hades", "Poseidón", "Ares", "Afrodita", "Hermes", "Apolo", "Artemisa", "Deméter", 
+    "Hestia", "Hefesto", "Hera", "Perséfone", "Atenea", "Dioniso")
+vector_resultado_dioses
+```
+
+Ahora ordenaremos este vector para que nos de una lista ordenada con las deidades que más representativas de mayor a menor:
+
+```{r}
+  sort(vector_resultado_dioses, decreasing = TRUE)
+```
+
+Finalmente tras obtener el vector resultado ordenado, habiéndo antes encontrado la solución al polinomio característico para su único autovalor (1), llegando  a un subespacio que determina la importancia de cada dios dentro del grafo podemos analizar los resultados fácilmente.
+
+Vemos que los tres dioses más importantes son Afrodita con un 15%, Ares con 12,5% y Hades con un 12%, y que los menos importantes son Hefesto con un 2,6%, Hermes con 2,7% y Atenea con 2,8%.
+
+Gracias a este algoritmo llegamos a porcentajes curiosos, como el de Hermes siendo el mensajero de los dioses que aún teniendo 6 interacciones activas (la media de interacciones está en 4,47 interacciones)  sólo obtiene un 2,6% pero Hades con 5 acciones activas obtiene 12%. 
+
+Zeus también tiene un porcentaje alto, esto se entiende ya que es uno de los dioses mas influyentes e importantes de la mitología Griega.
+
+La importancia de Afrodita recae en sus 9 interacciones activas dando explicación a su porcentaje (15%), ya que he valorado como una unidad de interacción por cada hijo que tuviese ese dios con otra deidad que pertenezca al grafo, como ella al ser la diosa del amor y la belleza es una de las grandes protagonistas de esta investigación y por lo consiguiente así se explica el gran porcentaje su amante preferido Ares con un 12,5%.
+
+## Recopilación de interacciones usadas para este proyecto
+
+En esta parte que complementa al grafo de la introducción están las 67 interacciones descritas individualmente, de forma que en cada índice se describen la acciones activas que ha tenido ese dios con los subíndices, es decir, los otros dioses con los que interactua.
+
+Cabe destacar que la nomenclatura basada en un número entre paréntesis, como por ejemplo "Zeus (10)", se refiere al conjunto de acciones activas totales que ejerce esa deidad. Y por otra parte lo mismo con los subíndices solo que de forma pasiva, es decir, "Hera (4)" quiere decir que Zeus interacciona con Hera 4 veces de forma activa.
+
+1. Zeus (10):
+  - Hera (4):
+    - Se casa con ella (1)
+    - Tiene 2 hijos: Hebe y Ares (2)
+    - Zeus es infiel numerosas veces, provocando su enfado y la exterminación de sus amantes (1).
+  - Deméter (1): 
+    - Zeus lanza un rayo fulminante a Iasión el cual es sobrino de Deméter la cuál estaba enamorada de Iasión (1).
+  - Dioniso (1):
+    - Zeus tiene a Dioniso con Sémele, la esposa de Zeus (Hera) carbonizó a su Sémele, pero Zeus consiguió rescatar el embrión y lo plantó en su muslo. De ahí viene su nombre, Dioniso (de dos madres) (1).
+  - Atenea (1):
+    - Zeus tiene una hija con Metis, pero antes de nacer Zeus conoce que su hija será más poderosa que él, así que decide convertir a Metis en una mosca, comiéndose a Metis y Atenea (1).
+  - Perséfone (1):
+    - Se transforma en su hermano Hades (su marido) para poder estar con su esposa Perséfone (su hija) (1).
+  - Artemisa (2):
+    - Le concede a su hija 9 deseos (1).
+    - Manda a Calisto al cielo convertida en osa tras haberse convertido en Artemisa (Zeus) y haber tenido relaciones con ella. Rompiendo su virginidad y embarazándola, provocando el enfado de Artemisa (1).
+
+
+2. Hades (5):
+  - Perséfone (3):
+    - Secuestra a Perséfone y la convierte en la Reina del inframundo (2).
+    - Tienen a su hijo Zagreo (Príncipe del inframundo) (1).
+  - Deméter (2):
+    - Secuestra a su hija Perséfone (1)
+    - Después llega a un acuerdo con ella, ya que estaba dejando a la población sin alimento por la falta de la diosa de la agricultura. Cada invierno Perséfone volverá al reino de Hades.
+    
+3. Poseidón (7):
+  - Deméter (2):
+    - Convertido en corcel la engaña y tiene 2 hijos: Arión y Desponea (2).
+  - Ares (1):
+    - Un hijo bastardo de Poseidón (Alirotio) agrede a Alcipe (hija de Ares), Ares asesina violentamente a Alirotio. Hay un juicio en el Olimpo cuyo juez es Zeus, Ares no sale culpable ya que, según Zeus, él hubiera hecho lo mismo con el bastardo (1).
+  - Atenea: (2)
+    - Poseidón y Atenea se juegan la ciudad de Atenas, en base a un regalo a la población. Atenea les regala un olivo y Poseidón ofrece una fuente de agua. Evidentemente se intuye quién fue el ganador por el nombre de la Ciudad (1).
+    - Poseidón tuvo relaciones (supuestos abusos) con la sacerdotisa de Atenea, y esta la castiga convirtiéndola en Medusa para evitar que alguien se acerque a la criatura, convirtiendo en piedra a todo ser que la mira (1).
+  - Hestia (1):
+    - Le pide matrimonio a su hermana Hestia junto a su sobrino Apolo, pero ella lo rechaza (1).
+  - Apolo (1):
+    - Junto a él construyeron una muralla en Troya, al no ser pagados, Poseidón mandó una inundación a Troya (1). 
+
+4. Ares (6):
+  - Afrodita (5):
+    - Tienen a Eros, Harmonía, Anteros, Phobos y Deimos (5).
+  - Poseidón (1):
+    - Ares asesina al hijo bastardo de Poseidón para vengar a su hija Alcipe (1).
+
+5. Afrodita (9):
+  - Ares (6):
+    - Es su amante favorito (1).
+    - Tienen 5 hijos (5).
+  - Hermes (1):
+    - Tuvo a Hermafrodito con él (1).
+  - Hefesto (1):
+    - Se casa con Hefesto ya que este le había regalado un trono de oro mágico a Hera que no la dejaba levantarse, Zeus llegó a un acuerdo con Hefesto y le quitó el castigo a Hera, pero a cambio se casaría con Afrodita (1).
+  - Dioniso (1):
+    - Tuvo a Príapo con él (1).
+    
+6. Hermes (6):
+  - Ares (1):
+    - Encuentra a Ares que estaba desaparecido y encerrado en un tarro enorme por 2 gigantes (Oto y Efialtes) (1).
+  - Apolo (1):
+    - De pequeño Hermes ataca a una tortuga y con su caparazón le regala a Apolo su legendaria lira (1).
+  - Afrodita (2):
+    - Este estaba enamorado de afrodita y tras insistir numerosas veces, consiguió cautivar a Afrodita con la ayuda de su padre Zeus (1).
+    - Tuvieron a un hijo llamado Hermafrodito, el cual fue abandonado por sus padres en un monte, fue criado por las ninfas y posteriormente surgió el mito y el término hermafrodita (1).
+  - Dioniso (1):
+    - Estuvo a cargo del cuidado de Dioniso cuando era pequeño (1).
+  - Hestia (1):
+    - Gran relación con su tía y vecina (1).
+
+7. Apolo (3):
+  - Artemisa (1):
+    - Van juntos a asesinar a toda una familia porque la reina Niobe se habían mofado de su madre Leto por tener menos hijos que ella, que tenía 14 hijos (1).  
+  - Hestia (1):
+    - Le pide matrimonio junto a su tío Poseidón, pero ella lo rechaza (1).
+  - Poseidón (1):
+    - Creó una muralla con su tío Poseidón en Troya (1).
+
+8. Artemisa (3):
+  - Apolo (2):
+    - Ayuda a su madre Leto a dar a luz a su hermano gemelo Apolo (1).
+    - Coopera para asesinara la familia de Niobe (1).
+  - Zeus (1):
+    - Le concedió 9 deseos a Artemisa (1).
+    
+9. Deméter (2):
+  - Zeus (1):
+    - Deméter se enamora de su sobrino Iasión, pero a Zeus le disgusta esa idea y lo mata con un rayo (1).
+  - Hades (1):
+    - Llega a un acuerdo con su hermano para que cada invierno Perséfone vuelva con Hades. Así la mitología griega explica la primavera. Ya que cuando Perséfone está en el infierno con Hades, su madre Deméter entra en un estado depresivo colosal que frena el crecimiento de la flora y los cultivos (1).
+    
+10. Hestia (3):
+  - Hermes (1):
+    - Gran relación de amistad con su sobrino Hermes, el cuál va a contarle a su tía Hestia las aventuras y misiones que lleva a cabo. También tenían su hogar uno al lado del otro por lo tanto eran vecinos (1).
+  - Poseidón (1):
+    - Hestia le juró ante Zeus que permanecería virgen, así que ella lo rechazó (1).
+  - Apolo (1):
+    - Ella le rechazó porque se mantendría virgen (1).
+
+11. Hefesto (3):
+  - Ares (1):
+    - Hefesto atrapa a Ares y Afrodita manteniendo relaciones sexuales y les tira una red de oro irrompible que los atrapó en la cama en uno de sus encuentros amorosos (1).
+  - Afrodita (1):
+    - Su mujer es sorprendida por él mismo mientras tenía relaciones con su amante Ares y les lanza la red dorada (1).
+  - Hera (1):
+    - Tras ser abandonado por su madre Hefesto crea un trono maldito a su madre Hera. Cuando Hera se sienta no puede levantarse hasta que Hefesto lo permita y queda atrapada en el trono (1).
+  
+12. Hera (5):
+  - Hefesto (1):
+    - Tras tener a Hefesto por envidia porque su marido Zeus tuvo a Atenea con Metis, abandonó a su hijo. Tiempo después esta recibe un regalo maldito de su hijo abandonado Hefesto, un trono (1).
+  - Zeus (4):
+    - Se casa con Zeus tras rechazarlo 300 veces (1).
+    - Infidelidades de Zeus las cuales causaban la exterminación de sus amantes (1).
+    - Tienen 2 hijos (2).
+    
+13. Perséfone (1):
+  - Hades (1):
+    - Concibe al príncipe del inframundo llamado Zagreo (1).
+
+14. Atenea (3):
+  - Poseidón (2):
+    - Se disputan la ciudad de Antenas, dando un regalo cada uno a la población de Atenas (1).
+    - Tras descubrir a su sacerdotisa con Poseidón, la convierte en Medusa (1).
+  - Zeus (1):
+    - Su padre devora a su madre Metis embarazada de Atenea, y al tiempo Metis da a luz a Atenea y sale de la frente de su padre con su lanza. Cuando sale de la cabeza de Zeus ya es adulta y tiene sus emblemáticas armas y armadura (1).  
+
+15. Dioniso (1):
+  - Afrodita (1):
+    - Tuvo a Príapo con Afrodita (1).
+    
+## Bibliografía
+1. CASTAÑEDA BRAVO, G. (1994) *Historia del mundo antiguo: Una introducción crítica*, Alianza Editorial S.A., Madrid.
+2. FERRUZZI, C. (2006) *Grandes civilizaciones: Grecia*, Mondadori Electa, Milán
+3. HARD, R. (2009) *El gran libro de la mitología griega: Basado en el manual de mitología griega de H. J. Rose*, La esfera de los libros S.L., Madrid
